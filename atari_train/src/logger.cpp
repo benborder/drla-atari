@@ -38,17 +38,17 @@ void AtariTrainingLogger::train_init(const drla::InitData& data)
 	int start_timestep = 0;
 
 	std::visit(
-			[&](auto& agent) {
-				env_count = agent.env_count;
-				std::visit(
-						[&](auto& train_algorithm) {
-							horizon_steps_ = train_algorithm.horizon_steps;
-							total_timesteps_ = train_algorithm.total_timesteps;
-							start_timestep = train_algorithm.start_timestep;
-						},
-						agent.train_algorithm);
-			},
-			config_.agent);
+		[&](auto& agent) {
+			env_count = agent.env_count;
+			std::visit(
+				[&](auto& train_algorithm) {
+					horizon_steps_ = train_algorithm.horizon_steps;
+					total_timesteps_ = train_algorithm.total_timesteps;
+					start_timestep = train_algorithm.start_timestep;
+				},
+				agent.train_algorithm);
+		},
+		config_.agent);
 
 	// For display purposes the timestep is non zero
 	total_timesteps_;
@@ -62,10 +62,7 @@ void AtariTrainingLogger::train_init(const drla::InitData& data)
 	fmt::print("{:=<80}\n", "");
 
 	current_episodes_.resize(env_count);
-	for (auto& ep : current_episodes_)
-	{
-		ep.id = total_episode_count_++;
-	}
+	for (auto& ep : current_episodes_) { ep.id = total_episode_count_++; }
 
 	start_time_ = std::chrono::steady_clock::now();
 }
@@ -106,7 +103,7 @@ bool AtariTrainingLogger::env_step(const drla::StepData& data)
 			{
 				episode_result.life_length.push_back(episode_result.length - episode_result.life_length.back());
 				episode_result.life_reward.push_back(
-						episode_result.reward[0].item<float>() - episode_result.life_reward.back());
+					episode_result.reward[0].item<float>() - episode_result.life_reward.back());
 			}
 		}
 		if (game_over)
@@ -209,7 +206,7 @@ void AtariTrainingLogger::train_update(const drla::TrainUpdateData& timestep_dat
 			}
 			std::string img(std::make_move_iterator(png.begin()), std::make_move_iterator(png.end()));
 			tb_logger_.add_image(
-					"observations/final_frame", timestep_data.timestep, img, obs_img.height, obs_img.width, obs_img.channels);
+				"observations/final_frame", timestep_data.timestep, img, obs_img.height, obs_img.width, obs_img.channels);
 		}
 	}
 
@@ -252,54 +249,54 @@ void AtariTrainingLogger::train_update(const drla::TrainUpdateData& timestep_dat
 	fmt::print("{:<{}}| {:g} ms\n", "train_time", max_len, train_time_stats_.get_mean());
 	fmt::print("{:<{}}| {:%H:%M:%S}\n", "elapsed_time", max_len, std::chrono::steady_clock::now() - start_time_);
 	fmt::print(
-			"{:<{}}| {} / {} [{:.2g}%]\n", "timesteps", max_len, timestep_data.timestep + 1, total_timesteps_, progress);
+		"{:<{}}| {} / {} [{:.2g}%]\n", "timesteps", max_len, timestep_data.timestep + 1, total_timesteps_, progress);
 	fmt::print("{:<{}}| {}\n", "episodes", max_len, total_episode_count_);
 	fmt::print(
-			"{:<{}}| {}\n", "global_steps", max_len, timestep_data.timestep * current_episodes_.size() * horizon_steps_);
+		"{:<{}}| {}\n", "global_steps", max_len, timestep_data.timestep * current_episodes_.size() * horizon_steps_);
 	for (const auto& data : timestep_data.update_data)
 	{
 		fmt::print("{:<{}}| {}\n", drla::get_result_type_name(data.type), max_len, data.value);
 	}
 	fmt::print(
-			fmt::bg(fmt::detail::color_type(fmt::rgb(50, 50, 50))) | fmt::emphasis::bold,
-			"{:<15}|{:^15}|{:^15}|{:^15}|{:^15}|",
-			"",
-			"mean",
-			"stdev",
-			"max",
-			"min");
+		fmt::bg(fmt::detail::color_type(fmt::rgb(50, 50, 50))) | fmt::emphasis::bold,
+		"{:<15}|{:^15}|{:^15}|{:^15}|{:^15}|",
+		"",
+		"mean",
+		"stdev",
+		"max",
+		"min");
 	fmt::print("\n");
 	std::string stats_fmt = "{:<15}|{:>14g} |{:>14g} |{:>14g} |{:>14g} |\n";
 	fmt::print(
-			stats_fmt,
-			"score",
-			score_stats_.get_mean(),
-			score_stats_.get_stdev(),
-			score_stats_.get_max(),
-			score_stats_.get_min());
+		stats_fmt,
+		"score",
+		score_stats_.get_mean(),
+		score_stats_.get_stdev(),
+		score_stats_.get_max(),
+		score_stats_.get_min());
 	fmt::print(
-			stats_fmt,
-			"reward",
-			reward_stats_.get_mean(),
-			reward_stats_.get_stdev(),
-			reward_stats_.get_max(),
-			reward_stats_.get_min());
+		stats_fmt,
+		"reward",
+		reward_stats_.get_mean(),
+		reward_stats_.get_stdev(),
+		reward_stats_.get_max(),
+		reward_stats_.get_min());
 	fmt::print(
-			stats_fmt,
-			"episode length",
-			episode_length_stats_.get_mean(),
-			episode_length_stats_.get_stdev(),
-			episode_length_stats_.get_max(),
-			episode_length_stats_.get_min());
+		stats_fmt,
+		"episode length",
+		episode_length_stats_.get_mean(),
+		episode_length_stats_.get_stdev(),
+		episode_length_stats_.get_max(),
+		episode_length_stats_.get_min());
 	if (config_.env.end_episode_on_life_loss)
 	{
 		fmt::print(
-				stats_fmt,
-				"life length",
-				life_length_stats_.get_mean(),
-				life_length_stats_.get_stdev(),
-				life_length_stats_.get_max(),
-				life_length_stats_.get_min());
+			stats_fmt,
+			"life length",
+			life_length_stats_.get_mean(),
+			life_length_stats_.get_stdev(),
+			life_length_stats_.get_max(),
+			life_length_stats_.get_min());
 	}
 	fmt::print("{:=<80}\n", "");
 
@@ -315,10 +312,10 @@ void AtariTrainingLogger::save(int steps, const std::filesystem::path& path)
 {
 	auto config = config_;
 	std::visit(
-			[&](auto& agent) {
-				std::visit([&](auto& train_algorithm) { train_algorithm.start_timestep = steps; }, agent.train_algorithm);
-			},
-			config_.agent);
+		[&](auto& agent) {
+			std::visit([&](auto& train_algorithm) { train_algorithm.start_timestep = steps; }, agent.train_algorithm);
+		},
+		config_.agent);
 	atari::utility::save_config(config, path);
 
 	fmt::print("Configuration saved to: {}\n", path.string());

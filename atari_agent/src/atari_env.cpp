@@ -107,10 +107,7 @@ drla::StepResult Atari::reset(const drla::State& initial_state)
 		ale_.act(ale::PLAYER_A_NOOP);
 	}
 
-	while (static_cast<int>(buffer_.size()) < config_.frame_stack)
-	{
-		buffer_.push_back(get_observation());
-	}
+	while (static_cast<int>(buffer_.size()) < config_.frame_stack) { buffer_.push_back(get_observation()); }
 
 	observations_[0] = torch::cat(buffer_);
 
@@ -158,7 +155,7 @@ torch::Tensor Atari::get_observation()
 		ale_.getScreenRGB(output_buffer);
 	}
 	raw_frame =
-			torch::from_blob(output_buffer.data(), {int(screen.height()), int(screen.width()), channels}, torch::kByte);
+		torch::from_blob(output_buffer.data(), {int(screen.height()), int(screen.width()), channels}, torch::kByte);
 
 	torch::Tensor obs = raw_frame.permute({2, 0, 1}).to(torch::kFloat).div(255.0F);
 	if (config_.output_resolution[0] > 0 || config_.output_resolution[1] > 0)
@@ -166,11 +163,11 @@ torch::Tensor Atari::get_observation()
 		int width = config_.output_resolution[0] > 0 ? config_.output_resolution[0] : screen.width();
 		int height = config_.output_resolution[1] > 0 ? config_.output_resolution[1] : screen.height();
 		obs = torch::nn::functional::interpolate(
-							obs.view({1, channels, int(screen.height()), int(screen.width())}),
-							torch::nn::functional::InterpolateFuncOptions()
-									.size(torch::make_optional<std::vector<int64_t>>({height, width}))
-									.mode(torch::kArea))
-							.view({channels, height, width});
+						obs.view({1, channels, int(screen.height()), int(screen.width())}),
+						torch::nn::functional::InterpolateFuncOptions()
+							.size(torch::make_optional<std::vector<int64_t>>({height, width}))
+							.mode(torch::kArea))
+						.view({channels, height, width});
 	}
 	return obs;
 }
@@ -181,5 +178,5 @@ void Atari::update_raw_observation()
 	const auto& screen = ale_.getScreen();
 	ale_.getScreenRGB(output_buffer);
 	raw_observations_ = {
-			torch::from_blob(output_buffer.data(), {int(screen.height()), int(screen.width()), 3}, torch::kByte).clone()};
+		torch::from_blob(output_buffer.data(), {int(screen.height()), int(screen.width()), 3}, torch::kByte).clone()};
 }

@@ -9,12 +9,19 @@ class Stats
 {
 public:
 	T get_mean() const { return mean_; }
+
 	T get_var() const { return var_; }
+
 	T get_stdev() const { return std::sqrt(var_); }
+
 	T get_max() const { return max_; }
+
 	T get_min() const { return min_; }
+
 	size_t get_count() const { return count_; }
+
 	void set_ratio(double ratio) { ratio_ = ratio; }
+
 	void update(const T& val)
 	{
 		if (count_ == 0)

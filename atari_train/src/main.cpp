@@ -22,13 +22,13 @@ void dummy()
 int main(int argc, char** argv)
 {
 	cxxopts::Options options(
-			"Atari Train", "Trains an agent, periodically saving the model and a tensorboard event file.");
+		"Atari Train", "Trains an agent, periodically saving the model and a tensorboard event file.");
 	options.add_options()(
-			"c,config",
-			"The config directory path or full file path. Relative paths use the data path as the base.",
-			cxxopts::value<std::string>()->default_value(""))(
-			"d,data", "The data path for saving/loading the model and training state", cxxopts::value<std::string>())(
-			"h,help", "This printout", cxxopts::value<bool>()->default_value("false"));
+		"c,config",
+		"The config directory path or full file path. Relative paths use the data path as the base.",
+		cxxopts::value<std::string>()->default_value(""))(
+		"d,data", "The data path for saving/loading the model and training state", cxxopts::value<std::string>())(
+		"h,help", "This printout", cxxopts::value<bool>()->default_value("false"));
 	options.allow_unrecognised_options();
 	auto result = options.parse(argc, argv);
 

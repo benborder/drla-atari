@@ -64,10 +64,10 @@ void AtariRunner::run(int env_count, int max_steps, bool save_gif)
 			int h = sz[0];
 			int c = sz[2];
 			auto gif_path = data_path_ / fmt::format(
-																			 "capture_{:%Y-%m-%d}_score_{}_ep{}.gif",
-																			 fmt::localtime(std::time(nullptr)),
-																			 episode_result.score.item<float>(),
-																			 episode_result.id);
+																		 "capture_{:%Y-%m-%d}_score_{}_ep{}.gif",
+																		 fmt::localtime(std::time(nullptr)),
+																		 episode_result.score.item<float>(),
+																		 episode_result.id);
 			if (gif_enc.open(gif_path, w, h, 10, true, 0, w * h * c * c))
 			{
 				gif_dims.height = h;
@@ -113,10 +113,7 @@ bool AtariRunner::env_step(const drla::StepData& data)
 {
 	std::lock_guard lock(m_step_);
 	fmt::print("\rstep: ");
-	for (auto& eps : current_episodes_)
-	{
-		fmt::print("{} ", eps.length);
-	}
+	for (auto& eps : current_episodes_) { fmt::print("{} ", eps.length); }
 
 	EpisodeResult& episode_result = current_episodes_[data.env];
 
@@ -140,11 +137,11 @@ bool AtariRunner::env_step(const drla::StepData& data)
 			{
 				episode_result.life_length.push_back(episode_result.length - episode_result.life_length.back());
 				episode_result.life_reward.push_back(
-						episode_result.reward[0].item<float>() - episode_result.life_reward.back());
+					episode_result.reward[0].item<float>() - episode_result.life_reward.back());
 			}
 		}
-		if (data.step_result.state.max_episode_steps > 0 &&
-				episode_result.length >= data.step_result.state.max_episode_steps)
+		if (
+			data.step_result.state.max_episode_steps > 0 && episode_result.length >= data.step_result.state.max_episode_steps)
 		{
 			game_over = true;
 		}

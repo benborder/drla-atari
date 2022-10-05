@@ -28,6 +28,7 @@ static inline void from_json(const nlohmann::json& json, Config::AtariEnv& env)
 	env.grayscale << optional_input{json, "grayscale"};
 	env.output_resolution << optional_input{json, "output_resolution"};
 }
+
 static inline void to_json(nlohmann::json& json, const Config::AtariEnv& env)
 {
 	json["rom_file"] = env.rom_file;

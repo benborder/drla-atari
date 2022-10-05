@@ -22,11 +22,11 @@ int main(int argc, char** argv)
 {
 	cxxopts::Options options("Atari Run", "Runs an agent, optionally saving a gif");
 	options.add_options()("p,data-path", "The data path to load the model from", cxxopts::value<std::string>())(
-			"g,save-gif", "Saves a gif of the episode(s)", cxxopts::value<bool>()->default_value("false"))(
-			"d,debug", "Enable debug logging", cxxopts::value<bool>()->default_value("false"))(
-			"e,env-count", "Number of envs to run", cxxopts::value<int>()->default_value("1"))(
-			"m,max-steps", "Maximum number of steps to run. 0 Implies infinite", cxxopts::value<int>()->default_value("0"))(
-			"h,help", "This printout", cxxopts::value<bool>()->default_value("false"));
+		"g,save-gif", "Saves a gif of the episode(s)", cxxopts::value<bool>()->default_value("false"))(
+		"d,debug", "Enable debug logging", cxxopts::value<bool>()->default_value("false"))(
+		"e,env-count", "Number of envs to run", cxxopts::value<int>()->default_value("1"))(
+		"m,max-steps", "Maximum number of steps to run. 0 Implies infinite", cxxopts::value<int>()->default_value("0"))(
+		"h,help", "This printout", cxxopts::value<bool>()->default_value("false"));
 	options.allow_unrecognised_options();
 	auto result = options.parse(argc, argv);
 
