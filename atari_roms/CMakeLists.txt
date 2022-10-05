@@ -10,28 +10,20 @@ project(atari_roms
 	LANGUAGES CXX
 )
 
-include(FetchContent)
-
 if (ROMS_URL)
+	include(FetchContent)
 
 	FetchContent_Declare(
 		roms
 		URL            ${ROMS_URL}
-		URL_HASH       MD5=1ef434fb85c6f2700e1d69787ef6f00c
-		DOWNLOAD_NO_EXTRACT true
+		URL_HASH       MD5=fc9d49b55a974f63c8f8659a4f7c445c
 	)
 	FetchContent_Populate(roms)
 
+	# This coppies to build directory to make running in debug mode easier
 	add_custom_target(atari_roms ALL
-		COMMAND 7z x -y ${roms_SOURCE_DIR}/Roms.rar > /dev/null
-		COMMENT "Unpacking ROMS"
-		WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/atari_roms
-	)
-
-	add_custom_command(
-		TARGET atari_roms
-		COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_BINARY_DIR}/atari_roms/ROMS ./atari_train/ROMS
-		COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_BINARY_DIR}/atari_roms/ROMS ./atari_run/ROMS
+		COMMAND ${CMAKE_COMMAND} -E copy_directory ${roms_SOURCE_DIR} ./atari_train/roms
+		COMMAND ${CMAKE_COMMAND} -E copy_directory ${roms_SOURCE_DIR} ./atari_run/roms
 		COMMENT "Copying Roms"
 		WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
 	)
@@ -39,8 +31,8 @@ if (ROMS_URL)
 	add_dependencies(atari_run atari_roms)
 
 	install(
-		DIRECTORY ${CMAKE_BINARY_DIR}/atari_roms/ROMS
-		DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
+		DIRECTORY ${roms_SOURCE_DIR}/
+		DESTINATION ${CMAKE_INSTALL_PREFIX}/bin/roms
 		FILES_MATCHING PATTERN "*.bin"
 	)
 
