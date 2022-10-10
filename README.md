@@ -38,7 +38,7 @@ To run training pass the config json file and the path to store the training dat
 
 An example config can be found [here](doc/config-example.jsonc).
 
-The performance of running 16 envs on a AMD Ryzen 9 5950X and nVidia RTX 3080 Ti is ~5000fps.
+The performance of running 16 envs on a AMD Ryzen 9 5950X and nVidia RTX 3080 Ti is ~7000fps.
 
 ## Monitoring training
 
