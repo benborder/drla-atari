@@ -25,7 +25,6 @@ public:
 private:
 	int single_step(ale::Action action);
 	torch::Tensor get_observation();
-	void update_raw_observation();
 
 private:
 	const Config::AtariEnv& config_;

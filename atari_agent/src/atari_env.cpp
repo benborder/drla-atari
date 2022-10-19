@@ -171,12 +171,3 @@ torch::Tensor Atari::get_observation()
 	}
 	return obs;
 }
-
-void Atari::update_raw_observation()
-{
-	std::vector<unsigned char> output_buffer;
-	const auto& screen = ale_.getScreen();
-	ale_.getScreenRGB(output_buffer);
-	raw_observations_ = {
-		torch::from_blob(output_buffer.data(), {int(screen.height()), int(screen.width()), 3}, torch::kByte).clone()};
-}

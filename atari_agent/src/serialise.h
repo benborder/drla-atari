@@ -6,7 +6,6 @@
 #include <drla/configuration/serialise_json.h>
 #include <drla/types.h>
 #include <nlohmann/json.hpp>
-#include <spdlog/spdlog.h>
 
 #include <iostream>
 

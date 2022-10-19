@@ -24,7 +24,7 @@ public:
 	/// @brief Stop training the agent.
 	void stop_train();
 
-	/// @brief Run the loading agent. Blocks until the max_steps reached or the environment terminates.
+	/// @brief Run the agent, blocking until the max_steps reached or the environment terminates.
 	/// @param env_count The number of environments to run
 	/// @param options Options which change various behaviours of the agent. See RunOptions for more detail on available
 	/// options.

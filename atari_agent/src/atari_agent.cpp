@@ -2,8 +2,6 @@
 
 #include "atari_env.h"
 
-#include <drla/interactive_agent.h>
-
 #include <iostream>
 
 using namespace atari;
@@ -33,7 +31,7 @@ void AtariAgent::run(int env_count, drla::RunOptions options)
 	std::vector<drla::State> initial_states;
 	initial_states.resize(env_count);
 	for (auto& state : initial_states) { state.max_episode_steps = options.max_steps; }
-	return agent_->run(initial_states, std::move(options));
+	agent_->run(initial_states, std::move(options));
 }
 
 std::unique_ptr<drla::Environment> AtariAgent::make_environment(torch::Device device)
