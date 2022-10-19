@@ -2,7 +2,7 @@
 	"environment": {
 		"rom_file": "rom.bin",
 		"end_episode_on_life_loss": true,
-		"clip_reward": false, // clip with the agent instead so the displayed reward is correct
+		"clip_reward": false, // clip with the agent instead so the displayed score is correct
 		"frame_skip": 3,
 		"noop_reset_max_frames": 10,
 		"frame_stack": 4,
@@ -21,7 +21,7 @@
 		"train_algorithm": {
 			"train_algorithm_type": "PPO",
 			"horizon_steps": 256,
-			"total_timesteps": 20000,
+			"total_timesteps": 5000,
 			"start_timestep": 0,
 			"learning_rate": 0.00025,
 			"learning_rate_min": 0.000001,
@@ -50,30 +50,34 @@
 		},
 		"model": {
 			"model_type": "ActorCritic",
-			"feature_extractor": {
-				"conv_layers": [
-					[
+			"feature_extractor": [
+				{
+					"type": "CNN",
+					"layers": [
 						{
+							"type": "Conv2d",
 							"out_channels": 32,
 							"kernel_size": 8,
 							"stride": 4,
-							"padding": 0
+							"activation": "ReLU"
 						},
 						{
+							"type": "Conv2d",
 							"out_channels": 64,
 							"kernel_size": 4,
 							"stride": 2,
-							"padding": 0
+							"activation": "ReLU"
 						},
 						{
+							"type": "Conv2d",
 							"out_channels": 64,
 							"kernel_size": 3,
 							"stride": 1,
-							"padding": 0
+							"activation": "ReLU"
 						}
 					]
-				]
-			},
+				}
+			],
 			"shared": {
 				"name": "shared",
 				"layers": [
