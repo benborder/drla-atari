@@ -16,7 +16,7 @@ using namespace atari;
 using namespace drla;
 
 AtariTrainingLogger::AtariTrainingLogger(atari::ConfigData config, const std::filesystem::path& path, bool resume)
-		: config_(config), tb_logger_(path.c_str(), resume), gif_path_()
+		: config_(config), tb_logger_(path.c_str(), TensorBoardLoggerOptions{}.resume(resume)), gif_path_()
 {
 	auto tmp_dir = std::filesystem::temp_directory_path();
 	std::filesystem::create_directory(tmp_dir);
