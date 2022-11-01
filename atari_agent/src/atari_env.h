@@ -13,7 +13,7 @@ namespace atari
 class Atari final : public drla::Environment
 {
 public:
-	Atari(const Config::AtariEnv& config, const torch::Device& device);
+	Atari(const Config::AtariEnv& config);
 
 	drla::EnvironmentConfiguration get_configuration() const override;
 

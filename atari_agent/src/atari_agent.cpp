@@ -34,9 +34,9 @@ void AtariAgent::run(int env_count, drla::RunOptions options)
 	agent_->run(initial_states, std::move(options));
 }
 
-std::unique_ptr<drla::Environment> AtariAgent::make_environment(torch::Device device)
+std::unique_ptr<drla::Environment> AtariAgent::make_environment()
 {
-	return std::make_unique<Atari>(config_.env, device);
+	return std::make_unique<Atari>(config_.env);
 }
 
 drla::State AtariAgent::get_initial_state()

@@ -31,7 +31,7 @@ public:
 	void run(int env_count, drla::RunOptions options = {});
 
 protected:
-	std::unique_ptr<drla::Environment> make_environment(torch::Device device) override;
+	std::unique_ptr<drla::Environment> make_environment() override;
 	drla::State get_initial_state() override;
 
 private:

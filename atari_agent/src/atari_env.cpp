@@ -5,7 +5,7 @@
 
 using namespace atari;
 
-Atari::Atari(const Config::AtariEnv& config, const torch::Device& device) : config_(config)
+Atari::Atari(const Config::AtariEnv& config) : config_(config)
 {
 	// Load the ROM file. (Also resets the system for new settings to take effect.)
 	ale_.loadROM(std::filesystem::current_path() / config_.rom_file);
@@ -131,8 +131,11 @@ drla::EnvironmentConfiguration Atari::get_configuration() const
 {
 	drla::EnvironmentConfiguration config;
 	config.name = config_.rom_file;
-	config.observation_shapes.emplace_back(observations_[0].sizes().begin(), observations_[0].sizes().end());
-	config.observation_dtypes.push_back(observations_[0].dtype().toScalarType());
+	const auto& screen = ale_.getScreen();
+	int width = config_.output_resolution[0] > 0 ? config_.output_resolution[0] : screen.width();
+	int height = config_.output_resolution[1] > 0 ? config_.output_resolution[1] : screen.height();
+	config.observation_shapes.push_back({{config_.frame_stack, height, width}});
+	config.observation_dtypes.push_back(torch::kFloat);
 	config.action_space = {drla::ActionSpaceType::kDiscrete, {static_cast<int>(action_set_.size())}};
 	config.reward_types = {"score"};
 	return config;
