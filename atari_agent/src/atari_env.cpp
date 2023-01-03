@@ -31,7 +31,7 @@ int Atari::single_step(ale::Action action)
 	return reward;
 }
 
-drla::StepResult Atari::step(torch::Tensor action)
+drla::EnvStepData Atari::step(torch::Tensor action)
 {
 	ale::Action a = action_set_[action[0].item<int>()];
 	torch::Tensor reward = torch::zeros(1);
@@ -83,7 +83,7 @@ drla::StepResult Atari::step(torch::Tensor action)
 }
 
 // This is performed after a step but before the next step
-drla::StepResult Atari::reset(const drla::State& initial_state)
+drla::EnvStepData Atari::reset(const drla::State& initial_state)
 {
 	step_ = 0;
 	episode_end_ = false;
@@ -120,11 +120,6 @@ drla::Observations Atari::get_raw_observations() const
 	const auto& screen = ale_.getScreen();
 	ale_.getScreenRGB(output_buffer);
 	return {torch::from_blob(output_buffer.data(), {int(screen.height()), int(screen.width()), 3}, torch::kByte).clone()};
-}
-
-void Atari::set_state(const drla::State& state)
-{
-	throw std::runtime_error("set_state unimplemented");
 }
 
 drla::EnvironmentConfiguration Atari::get_configuration() const

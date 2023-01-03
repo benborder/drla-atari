@@ -42,7 +42,6 @@ void AtariTrainingLogger::train_init(const drla::InitData& data)
 			env_count = agent.env_count;
 			std::visit(
 				[&](auto& train_algorithm) {
-					horizon_steps_ = train_algorithm.horizon_steps;
 					total_timesteps_ = train_algorithm.total_timesteps;
 					start_timestep = train_algorithm.start_timestep;
 				},
@@ -57,7 +56,6 @@ void AtariTrainingLogger::train_init(const drla::InitData& data)
 	fmt::print("Training Atari Agent\n");
 	fmt::print("Train timesteps: {}\n", total_timesteps_);
 	fmt::print("Envs: {}\n", env_count);
-	fmt::print("Horizon steps: {}\n", horizon_steps_);
 	fmt::print("Start timestep: {}\n", start_timestep);
 	fmt::print("{:=<80}\n", "");
 
@@ -82,18 +80,18 @@ bool AtariTrainingLogger::env_step(const drla::StepData& data)
 	if (episode_result.step_data.empty())
 	{
 		episode_result.reward = torch::zeros(data.reward.sizes());
-		episode_result.score = torch::zeros(data.step_result.reward.sizes());
+		episode_result.score = torch::zeros(data.env_data.reward.sizes());
 	}
 	episode_result.reward += data.reward;
-	episode_result.score += data.step_result.reward;
+	episode_result.score += data.env_data.reward;
 	episode_result.step_data.push_back(data);
 
-	if (data.step_result.state.episode_end)
+	if (data.env_data.state.episode_end)
 	{
 		bool game_over = true;
 		if (config_.env.end_episode_on_life_loss)
 		{
-			game_over = std::any_cast<const EnvState&>(data.step_result.state.env_state).lives == 0;
+			game_over = std::any_cast<const EnvState&>(data.env_data.state.env_state).lives == 0;
 			if (episode_result.life_length.empty())
 			{
 				episode_result.life_length.push_back(episode_result.length);
@@ -165,7 +163,7 @@ void AtariTrainingLogger::train_update(const drla::TrainUpdateData& timestep_dat
 		if (episode_result.render_final)
 		{
 			const auto& step = episode_result.step_data.back();
-			observation_images.push_back(create_tensor_image(step.step_result.observation.front().narrow(0, 0, 3)));
+			observation_images.push_back(create_tensor_image(step.env_data.observation.front().narrow(0, 0, 3)));
 		}
 		if (episode_result.render_gif)
 		{
@@ -251,8 +249,7 @@ void AtariTrainingLogger::train_update(const drla::TrainUpdateData& timestep_dat
 	fmt::print(
 		"{:<{}}| {} / {} [{:.2g}%]\n", "timesteps", max_len, timestep_data.timestep + 1, total_timesteps_, progress);
 	fmt::print("{:<{}}| {}\n", "episodes", max_len, total_episode_count_);
-	fmt::print(
-		"{:<{}}| {}\n", "global_steps", max_len, timestep_data.timestep * current_episodes_.size() * horizon_steps_);
+	fmt::print("{:<{}}| {}\n", "global_steps", max_len, timestep_data.global_steps);
 	for (const auto& data : timestep_data.update_data)
 	{
 		fmt::print("{:<{}}| {}\n", drla::get_result_type_name(data.type), max_len, data.value);

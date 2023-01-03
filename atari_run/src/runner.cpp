@@ -97,13 +97,13 @@ drla::AgentResetConfig AtariRunner::env_reset(const drla::StepData& data)
 	std::lock_guard lock(m_step_);
 	EpisodeResult& episode_result = current_episodes_[data.env];
 
-	if (episode_result.length == 0 || std::any_cast<const EnvState&>(data.step_result.state.env_state).lives == 0)
+	if (episode_result.length == 0 || std::any_cast<const EnvState&>(data.env_data.state.env_state).lives == 0)
 	{
 		// Clear the previous episode result for the env of this step data
 		episode_result = {};
 		episode_result.id = total_game_count_++;
 		episode_result.reward = torch::zeros(data.reward.sizes());
-		episode_result.score = torch::zeros(data.step_result.reward.sizes());
+		episode_result.score = torch::zeros(data.env_data.reward.sizes());
 	}
 
 	return {};
@@ -119,15 +119,15 @@ bool AtariRunner::env_step(const drla::StepData& data)
 
 	episode_result.length++;
 	episode_result.reward += data.reward;
-	episode_result.score += data.step_result.reward;
+	episode_result.score += data.env_data.reward;
 	episode_result.step_data.push_back(data);
 
-	if (data.step_result.state.episode_end)
+	if (data.env_data.state.episode_end)
 	{
 		bool game_over = true;
 		if (config_.env.end_episode_on_life_loss)
 		{
-			game_over = std::any_cast<const EnvState&>(data.step_result.state.env_state).lives == 0;
+			game_over = std::any_cast<const EnvState&>(data.env_data.state.env_state).lives == 0;
 			if (episode_result.life_length.empty())
 			{
 				episode_result.life_length.push_back(episode_result.length);
@@ -140,8 +140,7 @@ bool AtariRunner::env_step(const drla::StepData& data)
 					episode_result.reward[0].item<float>() - episode_result.life_reward.back());
 			}
 		}
-		if (
-			data.step_result.state.max_episode_steps > 0 && episode_result.length >= data.step_result.state.max_episode_steps)
+		if (data.env_data.state.max_episode_steps > 0 && episode_result.length >= data.env_data.state.max_episode_steps)
 		{
 			game_over = true;
 		}

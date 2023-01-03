@@ -17,10 +17,9 @@ public:
 
 	drla::EnvironmentConfiguration get_configuration() const override;
 
-	drla::StepResult step(torch::Tensor action) override;
-	drla::StepResult reset(const drla::State& initial_state) override;
+	drla::EnvStepData step(torch::Tensor action) override;
+	drla::EnvStepData reset(const drla::State& initial_state) override;
 	drla::Observations get_raw_observations() const override;
-	void set_state(const drla::State& state) override;
 
 private:
 	int single_step(ale::Action action);
