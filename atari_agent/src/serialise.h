@@ -2,8 +2,8 @@
 
 #include "configuration.h"
 
+#include <drla/auxiliary/serialise_json.h>
 #include <drla/configuration.h>
-#include <drla/configuration/serialise_json.h>
 #include <drla/types.h>
 #include <nlohmann/json.hpp>
 

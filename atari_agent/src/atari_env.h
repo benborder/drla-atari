@@ -21,15 +21,19 @@ public:
 	drla::EnvStepData reset(const drla::State& initial_state) override;
 	drla::Observations get_raw_observations() const override;
 
+	torch::Tensor expert_agent() override;
+
 private:
 	int single_step(ale::Action action);
 	torch::Tensor get_observation();
+	std::vector<int> get_legal_actions() const;
 
 private:
 	const Config::AtariEnv& config_;
 
 	ale::ALEInterface ale_;
 	ale::ActionVect action_set_;
+	std::map<ale::Action, int> action_index_;
 
 	EnvState state_;
 	int step_ = 0;

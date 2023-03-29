@@ -17,15 +17,16 @@ struct EpisodeResult
 	int env = 0;
 	int length = 0;
 	std::vector<int> life_length;
-	std::vector<float> life_reward;
+	std::vector<std::vector<float>> life_reward;
 
-	torch::Tensor reward;
-	torch::Tensor score;
+	std::vector<torch::Tensor> reward;
+	std::vector<torch::Tensor> score;
 	std::deque<drla::StepData> step_data;
 
 	// Indicates that this episode should be rendered
 	bool render_final = false;
 	bool render_gif = false;
+	bool eval_episode = false;
 };
 
 class AtariTrainingLogger : public drla::AgentCallbackInterface
@@ -54,6 +55,7 @@ private:
 
 	Stats<double> reward_stats_;
 	Stats<double> score_stats_;
+	Stats<double> eval_stats_;
 	Stats<double> episode_length_stats_;
 	Stats<double> life_length_stats_;
 	Stats<double> fps_stats_;
@@ -65,6 +67,9 @@ private:
 	int total_game_count_ = 0;
 	int horizon_steps_ = 0;
 	int total_timesteps_ = 0;
+	int num_actors_ = 0;
+	int actor_index_ = 0;
+	int eval_period_ = 0;
 
 	std::filesystem::path gif_path_;
 	std::chrono::steady_clock::time_point start_time_;

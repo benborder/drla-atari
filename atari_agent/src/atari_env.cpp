@@ -12,6 +12,8 @@ Atari::Atari(const Config::AtariEnv& config) : config_(config)
 
 	// Get the vector of minimal actions
 	action_set_ = ale_.getMinimalActionSet();
+	int i = 0;
+	for (auto action : action_set_) { action_index_.emplace(action, i++); }
 
 	observations_.resize(1);
 }
@@ -79,7 +81,11 @@ drla::EnvStepData Atari::step(torch::Tensor action)
 		episode_end_ = true;
 	}
 
-	return {observations_, reward, {std::make_any<EnvState>(state_), step_, episode_end_, max_episode_steps_}};
+	return {
+		observations_,
+		reward,
+		{std::make_any<EnvState>(state_), step_, episode_end_, max_episode_steps_},
+		get_legal_actions()};
 }
 
 // This is performed after a step but before the next step
@@ -90,7 +96,11 @@ drla::EnvStepData Atari::reset(const drla::State& initial_state)
 	max_episode_steps_ = initial_state.max_episode_steps;
 	if (config_.end_episode_on_life_loss && state_.lives > 0)
 	{
-		return {observations_, torch::zeros(1), {std::make_any<EnvState>(state_), step_, episode_end_, max_episode_steps_}};
+		return {
+			observations_,
+			torch::zeros(1),
+			{std::make_any<EnvState>(state_), step_, episode_end_, max_episode_steps_},
+			get_legal_actions()};
 	}
 
 	ale_.reset_game();
@@ -111,7 +121,7 @@ drla::EnvStepData Atari::reset(const drla::State& initial_state)
 
 	observations_[0] = torch::cat(buffer_);
 
-	return {observations_, torch::zeros(1), {std::make_any<EnvState>(state_), step_, episode_end_}};
+	return {observations_, torch::zeros(1), {std::make_any<EnvState>(state_), step_, episode_end_}, get_legal_actions()};
 }
 
 drla::Observations Atari::get_raw_observations() const
@@ -132,7 +142,9 @@ drla::EnvironmentConfiguration Atari::get_configuration() const
 	config.observation_shapes.push_back({{config_.frame_stack, height, width}});
 	config.observation_dtypes.push_back(torch::kFloat);
 	config.action_space = {drla::ActionSpaceType::kDiscrete, {static_cast<int>(action_set_.size())}};
+	config.action_set = get_legal_actions();
 	config.reward_types = {"score"};
+	config.num_actors = 1;
 	return config;
 }
 
@@ -168,4 +180,25 @@ torch::Tensor Atari::get_observation()
 						.view({channels, height, width});
 	}
 	return obs;
+}
+
+torch::Tensor Atari::expert_agent()
+{
+	// Not implemented
+	return {};
+}
+
+std::vector<int> Atari::get_legal_actions() const
+{
+	std::vector<int> legal_action_set;
+	auto action_set = ale_.getMinimalActionSet();
+	for (auto& action : action_set)
+	{
+		auto index = action_index_.find(action);
+		if (index != action_index_.end())
+		{
+			legal_action_set.push_back(index->second);
+		}
+	}
+	return legal_action_set;
 }

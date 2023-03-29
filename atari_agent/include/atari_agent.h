@@ -3,6 +3,7 @@
 #include "atari_agent/configuration.h"
 
 #include <drla/agent.h>
+#include <drla/auxiliary/env_manager.h>
 #include <drla/callback.h>
 #include <drla/environment.h>
 
@@ -12,7 +13,7 @@
 namespace atari
 {
 
-class AtariAgent final : public drla::EnvironmentManager
+class AtariAgent final : public drla::GenericEnvironmentManager
 {
 public:
 	AtariAgent(ConfigData&& config, drla::AgentCallbackInterface* callback, const std::filesystem::path& data_path = "");
@@ -30,11 +31,10 @@ public:
 	/// options.
 	void run(int env_count, drla::RunOptions options = {});
 
-protected:
+private:
 	std::unique_ptr<drla::Environment> make_environment() override;
 	drla::State get_initial_state() override;
 
-private:
 	const ConfigData config_;
 	std::unique_ptr<drla::Agent> agent_;
 };

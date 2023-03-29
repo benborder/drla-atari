@@ -40,6 +40,7 @@ void AtariTrainingLogger::train_init(const drla::InitData& data)
 	std::visit(
 		[&](auto& agent) {
 			env_count = agent.env_count;
+			eval_period_ = agent.eval_period;
 			std::visit(
 				[&](auto& train_algorithm) {
 					total_timesteps_ = train_algorithm.total_timesteps;
@@ -49,17 +50,20 @@ void AtariTrainingLogger::train_init(const drla::InitData& data)
 		},
 		config_.agent);
 
-	// For display purposes the timestep is non zero
-	total_timesteps_;
+	num_actors_ = data.env_config.num_actors;
 
 	fmt::print("{:=<80}\n", "");
 	fmt::print("Training Atari Agent\n");
 	fmt::print("Train timesteps: {}\n", total_timesteps_);
 	fmt::print("Envs: {}\n", env_count);
+	if (num_actors_ > 1)
+	{
+		fmt::print("Actors: {}\n", num_actors_);
+	}
 	fmt::print("Start timestep: {}\n", start_timestep);
 	fmt::print("{:=<80}\n", "");
 
-	current_episodes_.resize(env_count);
+	current_episodes_.resize(data.env_output.size());
 	for (auto& ep : current_episodes_) { ep.id = total_episode_count_++; }
 
 	start_time_ = std::chrono::steady_clock::now();
@@ -68,22 +72,38 @@ void AtariTrainingLogger::train_init(const drla::InitData& data)
 drla::AgentResetConfig AtariTrainingLogger::env_reset(const drla::StepData& data)
 {
 	std::lock_guard lock(m_step_);
-	const EpisodeResult& episode_result = current_episodes_[data.env];
-	return {false, episode_result.render_gif};
+	EpisodeResult& episode_result = current_episodes_.at(data.env);
+	episode_result.eval_episode = data.eval_mode;
+	// in eval mode stop when reset as we only want a single episode
+	auto stop = data.eval_mode && data.step > 0;
+	return {stop, episode_result.render_gif};
 }
 
 bool AtariTrainingLogger::env_step(const drla::StepData& data)
 {
 	std::lock_guard lock(m_step_);
-	EpisodeResult& episode_result = current_episodes_[data.env];
+	EpisodeResult& episode_result = current_episodes_.at(data.env);
 
 	if (episode_result.step_data.empty())
 	{
-		episode_result.reward = torch::zeros(data.reward.sizes());
-		episode_result.score = torch::zeros(data.env_data.reward.sizes());
+		episode_result.reward.resize(num_actors_);
+		episode_result.score.resize(num_actors_);
+		episode_result.life_reward.resize(num_actors_);
+		for (int i = 0; i < num_actors_; ++i)
+		{
+			episode_result.reward[i] = torch::zeros(data.reward.sizes());
+			episode_result.score[i] = torch::zeros(data.env_data.reward.sizes());
+		}
+
+		episode_result.reward.at(actor_index_) += data.reward;
+		episode_result.score.at(actor_index_) += data.env_data.reward;
 	}
-	episode_result.reward += data.reward;
-	episode_result.score += data.env_data.reward;
+	else
+	{
+		auto turn_index = episode_result.step_data.back().env_data.turn_index;
+		episode_result.reward.at(turn_index) += data.reward;
+		episode_result.score.at(turn_index) += data.env_data.reward;
+	}
 	episode_result.step_data.push_back(data);
 
 	if (data.env_data.state.episode_end)
@@ -91,17 +111,23 @@ bool AtariTrainingLogger::env_step(const drla::StepData& data)
 		bool game_over = true;
 		if (config_.env.end_episode_on_life_loss)
 		{
-			game_over = std::any_cast<const EnvState&>(data.env_data.state.env_state).lives == 0;
+			game_over = std::any_cast<const EnvState&>(data.env_data.state.env_state).lives == 0 || data.eval_mode;
 			if (episode_result.life_length.empty())
 			{
 				episode_result.life_length.push_back(episode_result.length);
-				episode_result.life_reward.push_back(episode_result.reward[0].item<float>());
+				for (size_t i = 0; i < episode_result.reward.size(); ++i)
+				{
+					episode_result.life_reward.at(i).push_back(episode_result.reward.at(i)[0].item<float>());
+				}
 			}
 			else
 			{
 				episode_result.life_length.push_back(episode_result.length - episode_result.life_length.back());
-				episode_result.life_reward.push_back(
-					episode_result.reward[0].item<float>() - episode_result.life_reward.back());
+				for (size_t i; i < episode_result.reward.size(); ++i)
+				{
+					episode_result.life_reward.at(i).push_back(
+						episode_result.reward.at(i)[0].item<float>() - episode_result.life_reward.at(i).back());
+				}
 			}
 		}
 		if (game_over)
@@ -117,7 +143,7 @@ bool AtariTrainingLogger::env_step(const drla::StepData& data)
 	}
 	else
 	{
-		if (!episode_result.render_gif && episode_result.step_data.size() > 1)
+		if (!episode_result.render_gif && !episode_result.eval_episode && episode_result.step_data.size() > 1)
 		{
 			episode_result.step_data.pop_front();
 		}
@@ -134,6 +160,17 @@ void AtariTrainingLogger::train_update(const drla::TrainUpdateData& timestep_dat
 	TensorImage gif_dims;
 	for (auto& episode_result : episode_results_)
 	{
+		if (episode_result.eval_episode)
+		{
+			float episode_reward = episode_result.reward.at(0)[0].item<float>();
+			for (size_t i = 1; i < episode_result.reward.size(); ++i)
+			{
+				episode_reward -= episode_result.reward[i][0].item<float>();
+			}
+			eval_stats_.update(episode_reward);
+			tb_logger_.add_scalar("environment/reward_eval", timestep_data.timestep, episode_reward);
+			continue;
+		}
 		episode_length_stats_.update(episode_result.length);
 		tb_logger_.add_scalar("environment/episode_length", timestep_data.timestep, double(episode_result.length));
 
@@ -145,25 +182,74 @@ void AtariTrainingLogger::train_update(const drla::TrainUpdateData& timestep_dat
 				life_length_stats_.update(life_length);
 				tb_logger_.add_scalar("environment/life_length", timestep_data.timestep, life_length);
 
-				const float life_reward = episode_result.life_reward[i];
-				reward_stats_.update(life_reward);
-				tb_logger_.add_scalar("environment/reward", timestep_data.timestep, life_reward);
+				if (num_actors_ > 1)
+				{
+					for (size_t actor; actor < episode_result.reward.size(); ++actor)
+					{
+						const float life_reward = episode_result.life_reward.at(actor)[i];
+						if (static_cast<int>(actor) == actor_index_)
+						{
+							reward_stats_.update(life_reward);
+						}
+						tb_logger_.add_scalar(
+							"environment/reward_actor" + std::to_string(actor), timestep_data.timestep, life_reward);
+					}
+				}
+				else
+				{
+					const float life_reward = episode_result.life_reward.back()[i];
+					reward_stats_.update(life_reward);
+					tb_logger_.add_scalar("environment/reward", timestep_data.timestep, life_reward);
+				}
 			}
 		}
 		else
 		{
-			const float episode_reward = episode_result.reward[0].item<float>();
-			reward_stats_.update(episode_reward);
-			tb_logger_.add_scalar("environment/reward", timestep_data.timestep, episode_reward);
+			if (num_actors_ > 1)
+			{
+				for (size_t actor; actor < episode_result.reward.size(); ++actor)
+				{
+					const float episode_reward = episode_result.reward.at(actor)[0].item<float>();
+					if (static_cast<int>(actor) == actor_index_)
+					{
+						reward_stats_.update(episode_reward);
+					}
+					tb_logger_.add_scalar(
+						"environment/reward_actor" + std::to_string(actor), timestep_data.timestep, episode_reward);
+				}
+			}
+			else
+			{
+				const float episode_reward = episode_result.reward.back()[0].item<float>();
+				reward_stats_.update(episode_reward);
+				tb_logger_.add_scalar("environment/reward", timestep_data.timestep, episode_reward);
+			}
 		}
 
-		score_stats_.update(episode_result.score.item<float>());
-		tb_logger_.add_scalar("environment/score", timestep_data.timestep, episode_result.score.item<float>());
+		if (num_actors_ > 1)
+		{
+			for (size_t actor; actor < episode_result.reward.size(); ++actor)
+			{
+				const float score = episode_result.score.at(actor).item<float>();
+				if (static_cast<int>(actor) == actor_index_)
+				{
+					score_stats_.update(score);
+				}
+				tb_logger_.add_scalar("environment/score_actor" + std::to_string(actor), timestep_data.timestep, score);
+			}
+		}
+		else
+		{
+			const float score = episode_result.score.back().item<float>();
+			score_stats_.update(score);
+			tb_logger_.add_scalar("environment/score", timestep_data.timestep, score);
+		}
 
 		if (episode_result.render_final)
 		{
 			const auto& step = episode_result.step_data.back();
-			observation_images.push_back(create_tensor_image(step.env_data.observation.front().narrow(0, 0, 3)));
+			auto channels = std::min<int>(step.env_data.observation.front().size(0), 3);
+			observation_images.push_back(create_tensor_image(step.env_data.observation.front().narrow(0, 0, channels)));
 		}
 		if (episode_result.render_gif)
 		{
@@ -278,6 +364,16 @@ void AtariTrainingLogger::train_update(const drla::TrainUpdateData& timestep_dat
 		reward_stats_.get_stdev(),
 		reward_stats_.get_max(),
 		reward_stats_.get_min());
+	if (eval_period_ > 0)
+	{
+		fmt::print(
+			stats_fmt,
+			"eval reward",
+			eval_stats_.get_mean(),
+			eval_stats_.get_stdev(),
+			eval_stats_.get_max(),
+			eval_stats_.get_min());
+	}
 	fmt::print(
 		stats_fmt,
 		"episode length",

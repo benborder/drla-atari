@@ -36,7 +36,6 @@ FetchContent_Declare(
 	GIT_TAG        master
 )
 FetchContent_MakeAvailable(drla)
-add_library(drla::drla ALIAS drla)
 
 FetchContent_Declare(
 	ale
@@ -79,6 +78,7 @@ target_include_directories(atari_agent
 target_link_libraries(atari_agent
 PUBLIC
   drla::drla
+  drla::aux
   ${TORCH_LIBRARIES}
   Threads::Threads
   nlohmann_json::nlohmann_json
