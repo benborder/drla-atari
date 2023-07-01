@@ -282,7 +282,7 @@ void AtariTrainingLogger::train_update(const drla::TrainUpdateData& timestep_dat
 		for (const auto& obs_img : observation_images)
 		{
 			std::vector<unsigned char> png;
-			unsigned error = lodepng::encode(png, obs_img.data, obs_img.height, obs_img.width, LCT_RGB);
+			unsigned error = lodepng::encode(png, obs_img.data, obs_img.width, obs_img.height, LCT_RGB);
 			if (error != 0)
 			{
 				fmt::print("png encoder error {}: {}", error, lodepng_error_text(error));
