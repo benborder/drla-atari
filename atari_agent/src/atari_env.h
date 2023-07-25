@@ -19,9 +19,11 @@ public:
 
 	drla::EnvStepData step(torch::Tensor action) override;
 	drla::EnvStepData reset(const drla::State& initial_state) override;
-	drla::Observations get_raw_observations() const override;
+	drla::Observations get_visualisations() const override;
 
 	torch::Tensor expert_agent() override;
+
+	std::unique_ptr<drla::Environment> clone() const override;
 
 private:
 	int single_step(ale::Action action);

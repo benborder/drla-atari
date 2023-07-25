@@ -265,7 +265,7 @@ void AtariTrainingLogger::train_update(const drla::TrainUpdateData& timestep_dat
 		if (episode_result.render_gif)
 		{
 			GifEncoder gif_enc;
-			auto sz = episode_result.step_data.front().raw_observation.front().sizes();
+			auto sz = episode_result.step_data.front().visualisation.front().sizes();
 			int w = sz[1];
 			int h = sz[0];
 			int c = sz[2];
@@ -276,7 +276,7 @@ void AtariTrainingLogger::train_update(const drla::TrainUpdateData& timestep_dat
 				gif_dims.channels = c;
 				for (auto& step_data : episode_result.step_data)
 				{
-					auto img = create_tensor_image(step_data.raw_observation.front());
+					auto img = create_tensor_image(step_data.visualisation.front());
 					gif_enc.push(GifEncoder::PIXEL_FORMAT_RGB, img.data.data(), img.width, img.height, 2);
 				}
 				gif_enc.close();
@@ -318,12 +318,11 @@ void AtariTrainingLogger::train_update(const drla::TrainUpdateData& timestep_dat
 	}
 
 	size_t max_len = 12;
-	for (const auto& data : timestep_data.update_data)
+	for (const auto& data : timestep_data.metrics.get_update_results())
 	{
-		std::string name = drla::get_result_type_name(data.type);
-		std::string tag = "train/" + name;
+		std::string tag = "train/" + data.name;
 		tb_logger_.add_scalar(tag, timestep_data.timestep, data.value);
-		max_len = std::max(max_len, name.size());
+		max_len = std::max(max_len, data.name.size());
 	}
 
 	max_len += 1;
@@ -354,9 +353,9 @@ void AtariTrainingLogger::train_update(const drla::TrainUpdateData& timestep_dat
 		"{:<{}}| {} / {} [{:.2g}%]\n", "timesteps", max_len, timestep_data.timestep + 1, total_timesteps_, progress);
 	fmt::print("{:<{}}| {}\n", "episodes", max_len, total_episode_count_);
 	fmt::print("{:<{}}| {}\n", "global_steps", max_len, timestep_data.global_steps);
-	for (const auto& data : timestep_data.update_data)
+	for (const auto& data : timestep_data.metrics.get_update_results())
 	{
-		fmt::print("{:<{}}| {}\n", drla::get_result_type_name(data.type), max_len, data.value);
+		fmt::print("{:<{}}| {}\n", data.name, max_len, data.value);
 	}
 	fmt::print(
 		fmt::bg(fmt::detail::color_type(fmt::rgb(50, 50, 50))) | fmt::emphasis::bold,

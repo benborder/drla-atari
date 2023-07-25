@@ -1,5 +1,7 @@
 #include "atari_env.h"
 
+#include <spdlog/spdlog.h>
+
 #include <algorithm>
 #include <filesystem>
 
@@ -124,7 +126,7 @@ drla::EnvStepData Atari::reset(const drla::State& initial_state)
 	return {observations_, torch::zeros(1), {std::make_any<EnvState>(state_), step_, episode_end_}, get_legal_actions()};
 }
 
-drla::Observations Atari::get_raw_observations() const
+drla::Observations Atari::get_visualisations() const
 {
 	std::vector<unsigned char> output_buffer;
 	const auto& screen = ale_.getScreen();
@@ -185,7 +187,7 @@ torch::Tensor Atari::get_observation()
 
 torch::Tensor Atari::expert_agent()
 {
-	// Not implemented
+	spdlog::error("Expert Agent is not supported via the atari environment");
 	return {};
 }
 
@@ -202,4 +204,10 @@ std::vector<int> Atari::get_legal_actions() const
 		}
 	}
 	return legal_action_set;
+}
+
+std::unique_ptr<drla::Environment> Atari::clone() const
+{
+	spdlog::error("Clonging is not supported with the atari environment");
+	return nullptr;
 }

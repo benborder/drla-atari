@@ -17,7 +17,9 @@
 	"agent": {
 		"asynchronous_env": false,
 		"env_count": 8,
-		"use_cuda": true,
+		"cuda_devices": [
+			-1 // use all available cuda devices
+		],
 		"train_algorithm": {
 			"train_algorithm_type": "PPO",
 			"horizon_steps": 256,
@@ -58,31 +60,39 @@
 							"type": "Conv2d",
 							"out_channels": 32,
 							"kernel_size": 8,
-							"stride": 4,
+							"stride": 4
+						},
+						{
 							"activation": "ReLU"
 						},
 						{
 							"type": "Conv2d",
 							"out_channels": 64,
 							"kernel_size": 4,
-							"stride": 2,
+							"stride": 2
+						},
+						{
 							"activation": "ReLU"
 						},
 						{
 							"type": "Conv2d",
 							"out_channels": 64,
 							"kernel_size": 3,
-							"stride": 1,
+							"stride": 1
+						},
+						{
 							"activation": "ReLU"
 						}
 					]
 				}
 			],
 			"shared": {
-				"name": "shared",
 				"layers": [
 					{
-						"size": 512,
+						"type": "Linear",
+						"size": 512
+					},
+					{
 						"activation": "ReLU"
 					}
 				]

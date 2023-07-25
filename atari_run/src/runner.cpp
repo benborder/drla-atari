@@ -27,7 +27,7 @@ void AtariRunner::run(int env_count, int max_steps, bool save_gif)
 
 	{
 		drla::RunOptions options;
-		options.capture_observations = save_gif;
+		options.enable_visualisations = save_gif;
 		options.max_steps = max_steps;
 
 		atari_agent_.run(env_count, options);
@@ -59,7 +59,7 @@ void AtariRunner::run(int env_count, int max_steps, bool save_gif)
 		if (save_gif && episode_result.step_data.size() > 2)
 		{
 			GifEncoder gif_enc;
-			auto sz = episode_result.step_data.front().raw_observation.front().sizes();
+			auto sz = episode_result.step_data.front().visualisation.front().sizes();
 			int w = sz[1];
 			int h = sz[0];
 			int c = sz[2];
@@ -75,7 +75,7 @@ void AtariRunner::run(int env_count, int max_steps, bool save_gif)
 				gif_dims.channels = c;
 				for (auto& step_data : episode_result.step_data)
 				{
-					auto img = create_tensor_image(step_data.raw_observation.front());
+					auto img = create_tensor_image(step_data.visualisation.front());
 					gif_enc.push(GifEncoder::PIXEL_FORMAT_RGB, img.data.data(), img.width, img.height, 2);
 				}
 				gif_enc.close();
