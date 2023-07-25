@@ -8,27 +8,14 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/benborder/libtorch-docker:cpu-dev
     steps:
       - name: Checkout
-        uses: actions/checkout@v2 # Required to mount the Github Workspace to a volume
+        uses: actions/checkout@v3
       - name: Check format
-        uses: addnab/docker-run-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-          image: ${{ secrets.DOCKERHUB_USERNAME }}/libtorch-docker:cpu-dev
-          options: -v ${{ github.workspace }}:/workspace
-          run: |
-            cd /workspace
-            find . -regextype egrep -regex ".*\.(h|hpp|cpp)$" | xargs clang-format --dry-run --Werror
-      - name: Build library and install
-        uses: addnab/docker-run-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-          image: ${{ secrets.DOCKERHUB_USERNAME }}/libtorch-docker:cpu-dev
-          options: -v ${{ github.workspace }}:/workspace
-          run: |
-            cd /workspace
-            cmake --preset ci
-            cmake --build --preset ci --target install --parallel $(grep -c ^processor /proc/cpuinfo)
+        run: find . -regextype egrep -regex ".*\.(h|hpp|cpp)$" | xargs -I {} sh -c 'clang-format --dry-run --Werror {} && echo {}'
+      - name: Build and install library
+        run: |
+          cmake --preset ci
+          cmake --build --preset ci --target install --parallel $(grep -c ^processor /proc/cpuinfo)
