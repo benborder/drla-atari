@@ -153,6 +153,17 @@ bool AtariTrainingLogger::env_step(const drla::StepData& data)
 	return false;
 }
 
+inline void print_stats(std::string name, const Stats<double>& stats)
+{
+	fmt::print(
+		"{:<15}|{:>14g} |{:>14g} |{:>14g} |{:>14g} |\n",
+		name,
+		stats.get_mean(),
+		stats.get_stdev(),
+		stats.get_max(),
+		stats.get_min());
+}
+
 void AtariTrainingLogger::train_update(const drla::TrainUpdateData& timestep_data)
 {
 	std::vector<TensorImage> observation_images;
@@ -328,10 +339,17 @@ void AtariTrainingLogger::train_update(const drla::TrainUpdateData& timestep_dat
 
 	double progress = 100 * static_cast<double>(timestep_data.timestep + 1) / static_cast<double>(total_timesteps_);
 
+	auto elapsed_seconds = std::chrono::steady_clock::now() - start_time_;
+	int total_hours = static_cast<int>(std::chrono::duration_cast<std::chrono::hours>(elapsed_seconds).count());
+	int remaining_minutes =
+		static_cast<int>(std::chrono::duration_cast<std::chrono::minutes>(elapsed_seconds % std::chrono::hours(1)).count());
+	int remaining_seconds = static_cast<int>(
+		std::chrono::duration_cast<std::chrono::seconds>(elapsed_seconds % std::chrono::minutes(1)).count());
+
 	fmt::print("{:<{}}| {:g} [{:g}]\n", "env_fps", max_len, fps_stats_.get_mean(), timestep_data.fps_env);
 	fmt::print("{:<{}}| {:g} ms\n", "env_time", max_len, env_time_stats_.get_mean());
 	fmt::print("{:<{}}| {:g} ms\n", "train_time", max_len, train_time_stats_.get_mean());
-	fmt::print("{:<{}}| {:%H:%M:%S}\n", "elapsed_time", max_len, std::chrono::steady_clock::now() - start_time_);
+	fmt::print("{:<{}}| {}:{:02}:{:02}\n", "elapsed_time", max_len, total_hours, remaining_minutes, remaining_seconds);
 	fmt::print(
 		"{:<{}}| {} / {} [{:.2g}%]\n", "timesteps", max_len, timestep_data.timestep + 1, total_timesteps_, progress);
 	fmt::print("{:<{}}| {}\n", "episodes", max_len, total_episode_count_);
@@ -349,47 +367,16 @@ void AtariTrainingLogger::train_update(const drla::TrainUpdateData& timestep_dat
 		"max",
 		"min");
 	fmt::print("\n");
-	std::string stats_fmt = "{:<15}|{:>14g} |{:>14g} |{:>14g} |{:>14g} |\n";
-	fmt::print(
-		stats_fmt,
-		"score",
-		score_stats_.get_mean(),
-		score_stats_.get_stdev(),
-		score_stats_.get_max(),
-		score_stats_.get_min());
-	fmt::print(
-		stats_fmt,
-		"reward",
-		reward_stats_.get_mean(),
-		reward_stats_.get_stdev(),
-		reward_stats_.get_max(),
-		reward_stats_.get_min());
+	print_stats("score", score_stats_);
+	print_stats("reward", reward_stats_);
 	if (eval_period_ > 0)
 	{
-		fmt::print(
-			stats_fmt,
-			"eval reward",
-			eval_stats_.get_mean(),
-			eval_stats_.get_stdev(),
-			eval_stats_.get_max(),
-			eval_stats_.get_min());
+		print_stats("eval reward", eval_stats_);
 	}
-	fmt::print(
-		stats_fmt,
-		"episode length",
-		episode_length_stats_.get_mean(),
-		episode_length_stats_.get_stdev(),
-		episode_length_stats_.get_max(),
-		episode_length_stats_.get_min());
+	print_stats("episode length", episode_length_stats_);
 	if (config_.env.end_episode_on_life_loss)
 	{
-		fmt::print(
-			stats_fmt,
-			"life length",
-			life_length_stats_.get_mean(),
-			life_length_stats_.get_stdev(),
-			life_length_stats_.get_max(),
-			life_length_stats_.get_min());
+		print_stats("life length", life_length_stats_);
 	}
 	fmt::print("{:=<80}\n", "");
 
