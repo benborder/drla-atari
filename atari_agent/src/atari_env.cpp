@@ -139,7 +139,8 @@ drla::EnvironmentConfiguration Atari::get_configuration() const
 	const auto& screen = ale_.getScreen();
 	int width = config_.output_resolution[0] > 0 ? config_.output_resolution[0] : screen.width();
 	int height = config_.output_resolution[1] > 0 ? config_.output_resolution[1] : screen.height();
-	config.observation_shapes.push_back({{config_.frame_stack, height, width}});
+	int channels = config_.frame_stack * (config_.grayscale ? 1 : 3);
+	config.observation_shapes.push_back({{channels, height, width}});
 	config.observation_dtypes.push_back(torch::kFloat);
 	config.action_space = {drla::ActionSpaceType::kDiscrete, {static_cast<int>(action_set_.size())}};
 	config.action_set = get_legal_actions();
