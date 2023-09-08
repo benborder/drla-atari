@@ -15,7 +15,6 @@ project(drla-atari
 # ----------------------------------------------------------------------------
 
 add_subdirectory(atari_agent)
-add_subdirectory(third_party)
 add_subdirectory(atari_train)
 add_subdirectory(atari_run)
 add_subdirectory(atari_roms)

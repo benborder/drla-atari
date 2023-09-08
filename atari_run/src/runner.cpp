@@ -1,11 +1,9 @@
 #include "runner.h"
 
-#include "tensor_to_image.h"
-
 #include <GifEncoder.h>
-#include <fmt/chrono.h>
-#include <fmt/color.h>
-#include <fmt/core.h>
+#include <drla/auxiliary/tensor_to_image.h>
+#include <spdlog/fmt/chrono.h>
+#include <spdlog/fmt/fmt.h>
 #include <spdlog/spdlog.h>
 
 #include <filesystem>
@@ -36,7 +34,6 @@ void AtariRunner::run(int env_count, int max_steps, bool save_gif)
 	fmt::print("\n");
 	spdlog::info("Complete!", env_count);
 
-	TensorImage gif_dims;
 	for (auto& episode_result : episode_results_)
 	{
 		if (config_.env.end_episode_on_life_loss)
@@ -68,11 +65,8 @@ void AtariRunner::run(int env_count, int max_steps, bool save_gif)
 																		 fmt::localtime(std::time(nullptr)),
 																		 episode_result.score.item<float>(),
 																		 episode_result.id);
-			if (gif_enc.open(gif_path, w, h, 10, true, 0, w * h * c * c))
+			if (gif_enc.open(gif_path, w, h, 10, true, 0, w * h * c * episode_result.step_data.size()))
 			{
-				gif_dims.height = h;
-				gif_dims.width = w;
-				gif_dims.channels = c;
 				for (auto& step_data : episode_result.step_data)
 				{
 					auto img = create_tensor_image(step_data.visualisation.front());

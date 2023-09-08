@@ -11,60 +11,19 @@ project(atari_train
 )
 
 # ----------------------------------------------------------------------------
-# Fetching 3rd party libs
+# Dependencies
 # ----------------------------------------------------------------------------
 
-include(FetchContent)
-
-FetchContent_Declare(
-	cxxopts
-	GIT_REPOSITORY https://github.com/jarro2783/cxxopts.git
-	GIT_TAG        v3.0.0
-)
-FetchContent_MakeAvailable(cxxopts)
-
-FetchContent_Declare(
-	spdlog
-	GIT_REPOSITORY https://github.com/gabime/spdlog.git
-	GIT_TAG        v1.10.0
-)
-FetchContent_MakeAvailable(spdlog)
-
-FetchContent_Declare(
-	fmt
-	GIT_REPOSITORY https://github.com/fmtlib/fmt.git
-	GIT_TAG        8.1.1
-)
-FetchContent_MakeAvailable(fmt)
-
-FetchContent_Declare(
-	tensorboard_logger
-	GIT_REPOSITORY https://github.com/RustingSword/tensorboard_logger.git
-	GIT_TAG        master
-)
-FetchContent_MakeAvailable(tensorboard_logger)
-
-FetchContent_Declare(
-	GifEncoder
-	GIT_REPOSITORY https://github.com/xiaozhuai/GifEncoder.git
-	GIT_TAG        master
-)
-FetchContent_MakeAvailable(GifEncoder)
-
-FetchContent_Declare(
-	lodepng
-	GIT_REPOSITORY https://github.com/lvandeve/lodepng.git
-	GIT_TAG        master
-)
-FetchContent_MakeAvailable(lodepng)
-
-# ----------------------------------------------------------------------------
-# Building Atari train cli
-# ----------------------------------------------------------------------------
+include(${CMAKE_SOURCE_DIR}/cmake/cxxopts.cmake)
+include(${CMAKE_SOURCE_DIR}/cmake/spdlog.cmake)
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 find_package(Torch REQUIRED)
+
+# ----------------------------------------------------------------------------
+# Building Atari train cli
+# ----------------------------------------------------------------------------
 
 add_executable(atari_train
 	src/main.cpp
@@ -79,9 +38,6 @@ target_compile_features(atari_train PRIVATE cxx_std_17)
 target_include_directories(atari_train
 	PRIVATE
 		src
-		${fmt_SOURCE_DIR}
-		${GifEncoder_SOURCE_DIR}/egif
-		${lodepng_SOURCE_DIR}
 )
 
 target_link_libraries(atari_train
@@ -90,11 +46,7 @@ PUBLIC
 	${TORCH_LIBRARIES}
 	Threads::Threads
 	cxxopts
-	tensorboard_logger
-	egif
-	lodepng
 	spdlog
-	fmt
 )
 
 # ----------------------------------------------------------------------------

@@ -11,47 +11,21 @@ project(atari_agent
 )
 
 # ----------------------------------------------------------------------------
-# Fetching 3rd party libs
+# Dependencies
 # ----------------------------------------------------------------------------
 
-include(FetchContent)
-
-FetchContent_Declare(
-  nlohmann_json
-  GIT_REPOSITORY https://github.com/nlohmann/json.git
-  GIT_TAG        v3.10.5
-)
-FetchContent_MakeAvailable(nlohmann_json)
-
-FetchContent_Declare(
-  spdlog
-  GIT_REPOSITORY https://github.com/gabime/spdlog.git
-  GIT_TAG        v1.10.0
-)
-FetchContent_MakeAvailable(spdlog)
-
-FetchContent_Declare(
-	drla
-	GIT_REPOSITORY https://github.com/benborder/drla.git
-	GIT_TAG        master
-)
-FetchContent_MakeAvailable(drla)
-
-FetchContent_Declare(
-	ale
-	GIT_REPOSITORY https://github.com/mgbellemare/Arcade-Learning-Environment.git
-	GIT_TAG        master
-)
-set(BUILD_PYTHON_LIB OFF)
-FetchContent_MakeAvailable(ale)
-
-# ----------------------------------------------------------------------------
-# Building Atari
-# ----------------------------------------------------------------------------
+include(${CMAKE_SOURCE_DIR}/cmake/drla.cmake)
+include(${CMAKE_SOURCE_DIR}/cmake/spdlog.cmake)
+include(${CMAKE_SOURCE_DIR}/cmake/ale.cmake)
+include(${CMAKE_SOURCE_DIR}/cmake/nlohmann_json.cmake)
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)  # Set -pthreads
 find_package(Threads REQUIRED)
 find_package(Torch REQUIRED)
+
+# ----------------------------------------------------------------------------
+# Building Atari
+# ----------------------------------------------------------------------------
 
 add_library(atari_agent STATIC
   src/atari_agent.cpp
