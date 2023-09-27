@@ -48,6 +48,7 @@ static inline void from_json(const nlohmann::json& json, ConfigData& config)
 	config.agent << required_input{json, "agent"};
 	config.observation_save_period << optional_input{json, "observation_save_period"};
 	config.observation_gif_save_period << optional_input{json, "observation_gif_save_period"};
+	config.metric_image_log_period << optional_input{json, "metric_image_log_period"};
 }
 
 static inline void to_json(nlohmann::json& json, const ConfigData& config)
@@ -56,6 +57,7 @@ static inline void to_json(nlohmann::json& json, const ConfigData& config)
 	json["agent"] = config.agent;
 	json["observation_save_period"] = config.observation_save_period;
 	json["observation_gif_save_period"] = config.observation_gif_save_period;
+	json["metric_image_log_period"] = config.metric_image_log_period;
 }
 
 static inline void from_json(const nlohmann::json& json, EnvState& state)

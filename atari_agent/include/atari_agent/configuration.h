@@ -47,6 +47,9 @@ struct ConfigData
 
 	// Every n episodes save the entire episode as a gif
 	int observation_gif_save_period = 10000;
+
+	// Every n train timesteps log any images from metrics
+	int metric_image_log_period = 1000;
 };
 
 struct EnvState

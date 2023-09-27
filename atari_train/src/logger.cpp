@@ -159,6 +159,12 @@ void AtariTrainingLogger::train_update(const drla::TrainUpdateData& timestep_dat
 		}
 	}
 
+	if (timestep_data.timestep >= 0 && ((timestep_data.timestep % config_.metric_image_log_period) == 0))
+	{
+		const auto& train_data = timestep_data.metrics.get_data();
+		for (auto [name, data] : train_data) { metrics_logger_.add_animation("metrics", name, data.front()); }
+	}
+
 	metrics_logger_.print(timestep_data, total_episode_count_);
 
 	episode_results_.clear();
