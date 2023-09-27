@@ -26,6 +26,7 @@ static inline void from_json(const nlohmann::json& json, Config::AtariEnv& env)
 	env.frame_stack = std::max(env.frame_stack, 1);
 	env.grayscale << optional_input{json, "grayscale"};
 	env.output_resolution << optional_input{json, "output_resolution"};
+	env.use_float << optional_input{json, "use_float"};
 }
 
 static inline void to_json(nlohmann::json& json, const Config::AtariEnv& env)
@@ -38,6 +39,7 @@ static inline void to_json(nlohmann::json& json, const Config::AtariEnv& env)
 	json["frame_stack"] = env.frame_stack;
 	json["grayscale"] = env.grayscale;
 	json["output_resolution"] = env.output_resolution;
+	json["use_float"] = env.use_float;
 }
 
 } // namespace Config

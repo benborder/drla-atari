@@ -30,6 +30,8 @@ struct AtariEnv
 	bool grayscale = false;
 	// The output resolution. A number < 0 implies using the original resolution.
 	std::array<int, 2> output_resolution = {0, 0};
+	// Convert the observation data to floats, scaling to the range [0, 1].
+	bool use_float = false;
 };
 
 } // namespace Config

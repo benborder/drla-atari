@@ -143,7 +143,7 @@ drla::EnvironmentConfiguration Atari::get_configuration() const
 	int height = config_.output_resolution[1] > 0 ? config_.output_resolution[1] : screen.height();
 	int channels = config_.frame_stack * (config_.grayscale ? 1 : 3);
 	config.observation_shapes.push_back({{channels, height, width}});
-	config.observation_dtypes.push_back(torch::kFloat);
+	config.observation_dtypes.push_back(config_.use_float ? torch::kFloat : torch::kByte);
 	config.action_space = {drla::ActionSpaceType::kDiscrete, {static_cast<int>(action_set_.size())}};
 	config.action_set = get_legal_actions();
 	config.reward_types = {"score"};
@@ -170,17 +170,26 @@ torch::Tensor Atari::get_observation()
 	raw_frame =
 		torch::from_blob(output_buffer.data(), {int(screen.height()), int(screen.width()), channels}, torch::kByte);
 
-	torch::Tensor obs = raw_frame.permute({2, 0, 1}).to(torch::kFloat).div(255.0F);
+	torch::Tensor obs = raw_frame.permute({2, 0, 1});
 	if (config_.output_resolution[0] > 0 || config_.output_resolution[1] > 0)
 	{
 		int width = config_.output_resolution[0] > 0 ? config_.output_resolution[0] : screen.width();
 		int height = config_.output_resolution[1] > 0 ? config_.output_resolution[1] : screen.height();
 		obs = torch::nn::functional::interpolate(
-						obs.view({1, channels, int(screen.height()), int(screen.width())}),
+						obs.to(torch::kFloat).div(255.0F).view({1, channels, int(screen.height()), int(screen.width())}),
 						torch::nn::functional::InterpolateFuncOptions()
 							.size(torch::make_optional<std::vector<int64_t>>({height, width}))
 							.mode(torch::kArea))
 						.view({channels, height, width});
+		if (!config_.use_float)
+		{
+			// convert back to Byte
+			obs = (obs * 255.0F).to(torch::kByte);
+		}
+	}
+	else if (config_.use_float)
+	{
+		obs = obs.to(torch::kFloat).div(255.0F);
 	}
 	return obs;
 }
