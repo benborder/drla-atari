@@ -1,12 +1,13 @@
 {
 	"environment": {
-		"rom_file": "rom.bin",
-		"end_episode_on_life_loss": true,
+		"rom_file": "roms/ms_pacman/ms_pacman.bin",
+		"end_episode_on_life_loss": false,
 		"clip_reward": false, // clip with the agent instead so the displayed score is correct
-		"frame_skip": 3,
+		"frame_skip": 4,
 		"noop_reset_max_frames": 10,
 		"frame_stack": 4,
 		"grayscale": true,
+		"use_float": false,
 		"output_resolution": [
 			84,
 			84
@@ -15,7 +16,6 @@
 	"observation_save_period": 500,
 	"observation_gif_save_period": 1000,
 	"agent": {
-		"asynchronous_env": false,
 		"env_count": 8,
 		"cuda_devices": [
 			-1 // use all available cuda devices
@@ -25,25 +25,28 @@
 			"horizon_steps": 256,
 			"total_timesteps": 5000,
 			"start_timestep": 0,
-			"learning_rate": 0.00025,
-			"learning_rate_min": 0.000001,
-			"lr_schedule_type": "Linear",
-			"lr_decay_rate": 1.0,
-			"epsilon": 1e-8,
-			"kl_target": 0.03,
-			"max_grad_norm": 0.5,
 			"num_epoch": 4,
 			"num_mini_batch": 4,
+			"kl_target": 0.03,
+			"clip_range_policy": 0.1,
 			"clip_vf": true,
 			"clip_range_vf": 0.1,
-			"clip_range_policy": 0.1,
 			"entropy_coef": 0.01,
 			"policy_loss_coef": 1.0,
 			"value_loss_coef": 0.5,
 			"gamma": [
 				0.996
 			],
-			"gae_lambda": 0.95
+			"gae_lambda": 0.95,
+			"optimiser": {
+				"type": "Adam",
+				"epsilon": 1e-8,
+				"learning_rate": 0.00025,
+				"learning_rate_min": 0.000001,
+				"lr_schedule_type": "Linear",
+				"lr_decay_rate": 1.0,
+				"grad_norm_clip": 0.5
+			}
 		},
 		"rewards": {
 			"reward_clamp_min": -1.0,
@@ -52,8 +55,10 @@
 		},
 		"model": {
 			"model_type": "ActorCritic",
+			// "gru_hidden_size": 512, // Uncomment to use recurrent model
 			"feature_extractor": [
 				{
+					// Nature CNN
 					"type": "CNN",
 					"layers": [
 						{
