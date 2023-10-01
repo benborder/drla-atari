@@ -53,4 +53,6 @@ private:
 
 	int total_episode_count_ = 0;
 	int total_game_count_ = 0;
+	int next_gif_capture_ep_ = 0;
+	int next_final_capture_ep_ = 0;
 };

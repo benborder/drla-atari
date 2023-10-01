@@ -41,7 +41,7 @@ void AtariTrainingLogger::train_init(const drla::InitData& data)
 	fmt::print("{:=<80}\n", "");
 
 	current_episodes_.resize(data.env_output.size());
-	for (auto& ep : current_episodes_) { ep.id = total_episode_count_++; }
+	for (auto& ep : current_episodes_) { ep.id = total_game_count_++; }
 
 	metrics_logger_.init(total_timesteps);
 }
@@ -97,12 +97,12 @@ bool AtariTrainingLogger::env_step(const drla::StepData& data)
 			episode_results_.push_back(std::move(episode_result));
 			episode_result = {};
 			episode_result.id = total_game_count_++;
-			episode_result.render_final = episode_result.id % config_.observation_save_period == 0;
-			episode_result.render_gif = episode_result.id % config_.observation_gif_save_period == 0;
-		}
-		if (!data.eval_mode)
-		{
-			++total_episode_count_;
+			episode_result.render_final = total_episode_count_ == next_final_capture_ep_;
+			episode_result.render_gif = total_episode_count_ == next_gif_capture_ep_;
+			if (!data.eval_mode)
+			{
+				++total_episode_count_;
+			}
 		}
 	}
 	else
@@ -121,43 +121,58 @@ void AtariTrainingLogger::train_update(const drla::TrainUpdateData& timestep_dat
 {
 	metrics_logger_.update(timestep_data);
 
+	m_step_.lock();
 	for (auto& episode_result : episode_results_)
 	{
 		if (episode_result.eval_episode)
 		{
 			metrics_logger_.add_scalar("environment", "reward_eval", episode_result.reward[0].item<float>());
-			continue;
-		}
-		metrics_logger_.add_scalar("environment", "episode_length", double(episode_result.length));
-
-		if (config_.env.end_episode_on_life_loss)
-		{
-			for (size_t i = 0; i < episode_result.life_length.size(); i++)
-			{
-				metrics_logger_.add_scalar("environment", "life_length", static_cast<float>(episode_result.life_length[i]));
-				metrics_logger_.add_scalar("environment", "reward", episode_result.life_reward[i]);
-			}
 		}
 		else
 		{
-			metrics_logger_.add_scalar("environment", "reward", episode_result.reward[0].item<float>());
-		}
+			metrics_logger_.add_scalar("environment", "episode_length", double(episode_result.length));
 
-		metrics_logger_.add_scalar("environment", "score", episode_result.score.item<float>());
+			if (config_.env.end_episode_on_life_loss)
+			{
+				for (size_t i = 0; i < episode_result.life_length.size(); i++)
+				{
+					metrics_logger_.add_scalar("environment", "life_length", static_cast<float>(episode_result.life_length[i]));
+					metrics_logger_.add_scalar("environment", "reward", episode_result.life_reward[i]);
+				}
+			}
+			else
+			{
+				metrics_logger_.add_scalar("environment", "reward", episode_result.reward[0].item<float>());
+			}
 
-		if (episode_result.render_final)
-		{
-			metrics_logger_.add_image(
-				"observations", "final_frame", episode_result.step_data.back().env_data.observation.front());
+			metrics_logger_.add_scalar("environment", "score", episode_result.score.item<float>());
+
+			if (episode_result.render_final)
+			{
+				metrics_logger_.add_image(
+					"observations", "final_frame", episode_result.step_data.back().env_data.observation.front());
+			}
 		}
-		if (episode_result.render_gif)
+		if (episode_result.render_gif || episode_result.eval_episode)
 		{
 			std::vector<torch::Tensor> images;
 			images.reserve(episode_result.step_data.size());
-			for (auto& step_data : episode_result.step_data) { images.push_back(step_data.visualisation.front()); }
-			metrics_logger_.add_animation("", "episode", images);
+			for (auto& step_data : episode_result.step_data) { images.push_back(step_data.visualisation.front().cpu()); }
+			metrics_logger_.add_animation("episode", episode_result.eval_episode ? "eval" : "train", images);
 		}
 	}
+
+	if (timestep_data.timestep % config_.observation_gif_save_period == 0)
+	{
+		next_gif_capture_ep_ = total_episode_count_ + 1;
+	}
+	if (timestep_data.timestep % config_.observation_save_period == 0)
+	{
+		next_final_capture_ep_ = total_episode_count_ + 1;
+	}
+
+	episode_results_.clear();
+	m_step_.unlock();
 
 	if (timestep_data.timestep >= 0 && ((timestep_data.timestep % config_.metric_image_log_period) == 0))
 	{
@@ -166,8 +181,6 @@ void AtariTrainingLogger::train_update(const drla::TrainUpdateData& timestep_dat
 	}
 
 	metrics_logger_.print(timestep_data, total_episode_count_);
-
-	episode_results_.clear();
 }
 
 torch::Tensor AtariTrainingLogger::interactive_step()
