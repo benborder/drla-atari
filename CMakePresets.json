@@ -13,7 +13,7 @@
 			"installDir": "${sourceParentDir}/install/drla-atari",
 			"cacheVariables": {
 				"Torch_DIR": "/usr/local/libtorch/share/cmake/Torch",
-				"JSON_BuildTests": "OFF"
+				"PYTHON_EXECUTABLE": "/usr/bin/python3"
 			}
 		},
 		{
