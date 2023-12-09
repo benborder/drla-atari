@@ -19,7 +19,7 @@ public:
 
 	drla::EnvStepData step(torch::Tensor action) override;
 	drla::EnvStepData reset(const drla::State& initial_state) override;
-	drla::Observations get_visualisations() const override;
+	drla::Observations get_visualisations() override;
 
 	torch::Tensor expert_agent() override;
 

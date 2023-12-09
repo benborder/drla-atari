@@ -1,7 +1,6 @@
 #include "runner.h"
 
-#include <GifEncoder.h>
-#include <drla/auxiliary/tensor_to_image.h>
+#include <drla/auxiliary/tensor_media.h>
 #include <spdlog/fmt/chrono.h>
 #include <spdlog/fmt/fmt.h>
 #include <spdlog/spdlog.h>
@@ -55,29 +54,15 @@ void AtariRunner::run(int env_count, int max_steps, bool save_gif)
 
 		if (save_gif && episode_result.step_data.size() > 2)
 		{
-			GifEncoder gif_enc;
-			auto sz = episode_result.step_data.front().visualisation.front().sizes();
-			int w = sz[1];
-			int h = sz[0];
-			int c = sz[2];
 			auto gif_path = data_path_ / fmt::format(
 																		 "capture_{:%Y-%m-%d}_score_{}_ep{}.gif",
 																		 fmt::localtime(std::time(nullptr)),
 																		 episode_result.score.item<float>(),
 																		 episode_result.id);
-			if (gif_enc.open(gif_path, w, h, 10, true, 0, w * h * c * episode_result.step_data.size()))
-			{
-				for (auto& step_data : episode_result.step_data)
-				{
-					auto img = create_tensor_image(step_data.visualisation.front());
-					gif_enc.push(GifEncoder::PIXEL_FORMAT_RGB, img.data.data(), img.width, img.height, 2);
-				}
-				gif_enc.close();
-			}
-			else
-			{
-				spdlog::error("gif encoder error: could not create file '{}'\n", gif_path.string());
-			}
+			std::vector<torch::Tensor> images;
+			images.reserve(episode_result.step_data.size());
+			for (auto& step_data : episode_result.step_data) { images.push_back(step_data.visualisation.front()); }
+			save_gif_animation(gif_path, images, 2);
 		}
 	}
 }

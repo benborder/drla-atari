@@ -16,7 +16,6 @@ project(atari_run
 
 include(${CMAKE_SOURCE_DIR}/cmake/cxxopts.cmake)
 include(${CMAKE_SOURCE_DIR}/cmake/spdlog.cmake)
-include(${CMAKE_SOURCE_DIR}/cmake/GifEncoder.cmake)
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
@@ -48,7 +47,6 @@ PUBLIC
 	${TORCH_LIBRARIES}
 	Threads::Threads
 	cxxopts
-	egif
 	spdlog
 )
 

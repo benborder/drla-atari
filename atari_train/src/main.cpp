@@ -60,10 +60,7 @@ int main(int argc, char** argv)
 
 	auto config = atari::utility::load_config(config_path);
 
-	// The file name must have 'tfevents' in it for tensorboard to be able to find and read the file.
-	auto log_filepath = data_path / "tfevents.pb";
-
-	AtariTrainingLogger logger(config, log_filepath, resume);
+	AtariTrainingLogger logger(config, data_path, resume);
 	atari::AtariAgent atari_agent(std::move(config), &logger, data_path);
 
 	atari_agent.train();

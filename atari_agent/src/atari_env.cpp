@@ -126,7 +126,7 @@ drla::EnvStepData Atari::reset(const drla::State& initial_state)
 	return {observations_, torch::zeros(1), {std::make_any<EnvState>(state_), step_, episode_end_}, get_legal_actions()};
 }
 
-drla::Observations Atari::get_visualisations() const
+drla::Observations Atari::get_visualisations()
 {
 	std::vector<unsigned char> output_buffer;
 	const auto& screen = ale_.getScreen();
