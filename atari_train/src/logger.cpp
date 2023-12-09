@@ -2,9 +2,11 @@
 
 #include "atari_agent/utility.h"
 
+#include <nlohmann/json.hpp>
 #include <spdlog/spdlog.h>
 
 #include <filesystem>
+#include <fstream>
 #include <string>
 
 using namespace atari;
@@ -13,6 +15,24 @@ using namespace drla;
 AtariTrainingLogger::AtariTrainingLogger(atari::ConfigData config, const std::filesystem::path& path, bool resume)
 		: config_(config), metrics_logger_(path, resume)
 {
+	std::filesystem::path buffer_save_path = std::visit(
+		[](auto& agent) {
+			return std::visit([](auto& train_algorithm) { return train_algorithm.buffer_save_path; }, agent.train_algorithm);
+		},
+		config_.agent);
+	if (!buffer_save_path.empty())
+	{
+		if (buffer_save_path.is_relative())
+		{
+			buffer_path_ = path / buffer_save_path;
+		}
+		else
+		{
+			buffer_path_ = buffer_save_path;
+		}
+		// Make sure the path exists
+		std::filesystem::create_directory(buffer_path_);
+	}
 }
 
 void AtariTrainingLogger::train_init(const drla::InitData& data)
@@ -51,6 +71,7 @@ drla::AgentResetConfig AtariTrainingLogger::env_reset(const drla::StepData& data
 	std::lock_guard lock(m_step_);
 	EpisodeResult& episode_result = current_episodes_.at(data.env);
 	episode_result.eval_episode = data.eval_mode;
+	episode_result.name = data.name;
 	// in eval mode stop when reset as we only want a single episode
 	auto stop = data.eval_mode && data.step > 0;
 	return {stop, episode_result.render_gif};
@@ -160,6 +181,10 @@ void AtariTrainingLogger::train_update(const drla::TrainUpdateData& timestep_dat
 			for (auto& step_data : episode_result.step_data) { images.push_back(step_data.visualisation.front().cpu()); }
 			metrics_logger_.add_animation("episode", episode_result.eval_episode ? "eval" : "train", images);
 		}
+		if (!episode_result.name.empty() && !buffer_path_.empty())
+		{
+			save_episode_metrics(episode_result);
+		}
 	}
 
 	if (timestep_data.timestep % config_.observation_gif_save_period == 0)
@@ -200,4 +225,33 @@ void AtariTrainingLogger::save(int steps, const std::filesystem::path& path)
 
 	fmt::print("Configuration saved to: {}\n", path.string());
 	fmt::print("{:-<80}\n", "");
+}
+
+void AtariTrainingLogger::save_episode_metrics(const EpisodeResult& episode)
+{
+	auto path = buffer_path_ / ("episode_" + episode.name);
+	std::filesystem::create_directory(path);
+	nlohmann::json json;
+	json["length"] = episode.length;
+	if (config_.env.end_episode_on_life_loss)
+	{
+		auto life_eps = json["life_episodes"];
+		for (size_t i = 0; i < episode.life_length.size(); i++)
+		{
+			nlohmann::json life_json;
+			life_json["life_length"] = static_cast<float>(episode.life_length[i]);
+			life_json["reward"] = episode.life_reward[i];
+			life_eps.push_back(std::move(life_json));
+		}
+	}
+	else
+	{
+		json["reward"] = episode.reward.item<float>();
+	}
+	json["score"] = episode.score.item<float>();
+
+	// Save to file
+	std::ofstream metrics_file(path / "metrics.json");
+	metrics_file << json.dump(2);
+	metrics_file.close();
 }

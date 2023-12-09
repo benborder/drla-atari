@@ -8,10 +8,12 @@
 #include <chrono>
 #include <deque>
 #include <filesystem>
+#include <string>
 #include <vector>
 
 struct EpisodeResult
 {
+	std::string name;
 	int id = 0;
 	int env = 0;
 	int length = 0;
@@ -42,7 +44,10 @@ private:
 
 	void save(int steps, const std::filesystem::path& path) override;
 
+	void save_episode_metrics(const EpisodeResult& episode);
+
 	atari::ConfigData config_;
+	std::filesystem::path buffer_path_;
 
 	drla::TrainingMetricsLogger metrics_logger_;
 
