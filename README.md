@@ -22,7 +22,6 @@ All below dependencies are fetched automatically via cmake fetch content.
 - [nlohmann-json](https://github.com/nlohmann/json)
 - [spdlog](https://github.com/gabime/spdlog)
 - [cxxopts](https://github.com/jarro2783/cxxopts)
-- [GifEncoder](https://github.com/xiaozhuai/GifEncoder)
 - Atari Roms - The user can set the ROMS url via the cmake variable `ROMS_URL`. See [this](https://github.com/Farama-Foundation/AutoROM/blob/v0.3/AutoROM/AutoROM.py#L21) for reference.
 
 ## Training
