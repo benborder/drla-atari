@@ -220,7 +220,7 @@ void AtariTrainingLogger::save(int steps, const std::filesystem::path& path)
 		[&](auto& agent) {
 			std::visit([&](auto& train_algorithm) { train_algorithm.start_timestep = steps; }, agent.train_algorithm);
 		},
-		config_.agent);
+		config.agent);
 	atari::utility::save_config(config, path);
 
 	fmt::print("Configuration saved to: {}\n", path.string());
