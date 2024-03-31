@@ -1,6 +1,7 @@
 #include "atari_env.h"
 
 #include <spdlog/spdlog.h>
+#include <torch/nn/functional.h>
 
 #include <algorithm>
 #include <filesystem>
